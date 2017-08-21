@@ -2,10 +2,10 @@
 <html>
 <head>
     <title>Leaflet.heat demo</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet-src.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet-src.js"></script>
     <style>
-        #map { width: 800px; height: 600px; }
+        #map { width: 1000px; height: 800px; }
         body { font: 16px/1.4 "Helvetica Neue", Arial, sans-serif; }
         .ghbtns { position: relative; top: 4px; margin-left: 5px; }
         a { color: #0077ff; }
@@ -41,7 +41,7 @@ var url = "https://storage.googleapis.com/visivi-heatmap/nr-routeview/tiles.tmp/
 //var url = "https://storage.googleapis.com/visivi-heatmap/nr-routeview/tiles.tmp/LN500W70N600E30.json";
 //"https://storage.googleapis.com/visivi-heatmap/jacobs-severn-valley-pipeline/tiles.tmp/MN520W30N530W10.json"
 
-var config = {radius: m.stream(15), blur: m.stream(15), max: m.stream(1.0), maxZoom: m.stream(map.getMaxZoom())}
+var config = {radius: m.stream(15), blur: m.stream(15), max: m.stream(0.002), maxZoom: m.stream(map.getMaxZoom())}
 
 m.render(document.getElementById('toggle'), [
     m("p", ["Radius:", m("input", {value: config.radius(), oninput: m.withAttr('value', config.radius)})]),
@@ -53,12 +53,13 @@ m.render(document.getElementById('toggle'), [
 m.stream.merge([config.radius, config.max, config.blur, config.maxZoom]).map((a)=> {
     if (!heat) return;
     heat.setOptions({radius: +(config.radius()), max: +(config.max()), blur: +(config.blur()), maxZoom: +(config.maxZoom())});
-})
+});
 
 fetch(url).then((a)=> {
     a.json().then((latlngs)=> {
+        latlngs = latlngs.map((a)=> [a[0], a[1], a[3]]);
         var poly = L.polyline(latlngs);//.addTo(map);
-        heat = L.heatLayer(latlngs, {radius: 10, blur: 10, max: 0.05 }).addTo(map);
+        heat = L.heatLayer(latlngs, {radius: 15, blur: 15, max: 0.002 }).addTo(map);
 
         map.fitBounds(poly.getBounds());
     });
