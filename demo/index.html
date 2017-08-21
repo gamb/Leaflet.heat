@@ -2,8 +2,8 @@
 <html>
 <head>
     <title>Leaflet.heat demo</title>
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
-    <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet-src.js"></script>
     <style>
         #map { width: 800px; height: 600px; }
         body { font: 16px/1.4 "Helvetica Neue", Arial, sans-serif; }
@@ -13,11 +13,7 @@
 </head>
 <body>
 
-<p>
-    A 10,000-point demo of <a href="https://github.com/Leaflet/Leaflet.heat">Leaflet.heat</a>, a tiny and fast Leaflet heatmap plugin.
-    <iframe class="ghbtns" src="http://ghbtns.com/github-btn.html?user=Leaflet&amp;repo=Leaflet.heat&amp;type=watch&amp;count=true"
-  allowtransparency="true" frameborder="0" scrolling="0" width="90" height="20"></iframe>
-</p>
+<div id="toggle"></div>
 
 <div id="map"></div>
 
@@ -26,7 +22,9 @@
 
 <script src="../dist/leaflet-heat.js"></script>
 
-<script src="http://leaflet.github.io/Leaflet.markercluster/example/realworld.10000.js"></script>
+<!--<script src="http://leaflet.github.io/Leaflet.markercluster/example/realworld.10000.js"></script>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mithril/1.1.3/mithril.js"></script>
+<script src="https://unpkg.com/mithril/stream/stream.js"></script>
 <script>
 
 var map = L.map('map').setView([-37.87, 175.475], 12);
@@ -35,9 +33,36 @@ var tiles = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
 }).addTo(map);
 
-addressPoints = addressPoints.map(function (p) { return [p[0], p[1]]; });
+/*addressPoints = addressPoints.map(function (p) { return [p[0], p[1]]; });*/
 
-var heat = L.heatLayer(addressPoints).addTo(map);
+var heat;// = L.heatLayer([]).addTo(map);
+
+var url = "https://storage.googleapis.com/visivi-heatmap/nr-routeview/tiles.tmp/MN500W70N590E20.json"
+//var url = "https://storage.googleapis.com/visivi-heatmap/nr-routeview/tiles.tmp/LN500W70N600E30.json";
+//"https://storage.googleapis.com/visivi-heatmap/jacobs-severn-valley-pipeline/tiles.tmp/MN520W30N530W10.json"
+
+var config = {radius: m.stream(15), blur: m.stream(15), max: m.stream(1.0), maxZoom: m.stream(map.getMaxZoom())}
+
+m.render(document.getElementById('toggle'), [
+    m("p", ["Radius:", m("input", {value: config.radius(), oninput: m.withAttr('value', config.radius)})]),
+    m("p", ["Blur:", m("input", {value: config.blur(), oninput: m.withAttr('value', config.blur)})]),
+    m("p", ["Max point intensity:", m("input", {value: config.max(), oninput: m.withAttr('value', config.max)})]),
+    m("p", ["Max zoom:", m("input", {value: config.maxZoom(), oninput: m.withAttr('value', config.maxZoom)})]), //
+]);
+
+m.stream.merge([config.radius, config.max, config.blur, config.maxZoom]).map((a)=> {
+    if (!heat) return;
+    heat.setOptions({radius: +(config.radius()), max: +(config.max()), blur: +(config.blur()), maxZoom: +(config.maxZoom())});
+})
+
+fetch(url).then((a)=> {
+    a.json().then((latlngs)=> {
+        var poly = L.polyline(latlngs);//.addTo(map);
+        heat = L.heatLayer(latlngs, {radius: 10, blur: 10, max: 0.05 }).addTo(map);
+
+        map.fitBounds(poly.getBounds());
+    });
+});
 
 </script>
 </body>
